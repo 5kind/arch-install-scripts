@@ -2,6 +2,7 @@
 
 This is a small suite of scripts aimed at automating some menial
 tasks when installing [Arch Linux](https://www.archlinux.org).
+Made some changes to make it available on Android devices
 
 ## Requirements
 
