@@ -96,6 +96,14 @@ arch-chroot() {
   [[ $userspec ]] && chroot_args+=(--userspec "$userspec")
 
   SHELL=/bin/bash $pid_unshare chroot "${chroot_args[@]}" -- "$chrootdir" "${args[@]}"
+  if [ $? -ne 0 ]; then
+    warning "unshare may failed! try chroot $chrootdir without unshare!"
+    SHELL=/bin/bash chroot "${chroot_args[@]}" -- "$chrootdir" "${args[@]}"
+    if [ $? -ne 0 ]; then
+      warning "chroot -- $chrootdir may failed! try chroot $chrootdir without --!"
+      SHELL=/bin/bash chroot "${chroot_args[@]}" "$chrootdir" "${args[@]}"
+    fi
+  fi
 }
 
 while getopts ':hNu:r' flag; do
