@@ -26,7 +26,7 @@ usage: ${0##*/} [command] [arguments...]
     -u <user>[:group]   Specify non-root user and optional group to use
     -c                  export \$HOME=/proc/\$pid/cwd
 
-If 'command' is unspecified, ${0##*/} will launch /bin/sh.
+If 'command' is unspecified, ${0##*/} will launch \$SHELL($SHELL) or /bin/sh.
 
 EOF
 }
@@ -45,6 +45,14 @@ unchroot() {
 
 unchroot_readlink() {
   printf %s $($0 -p $chpid /bin/readlink -f "$1")
+}
+
+unchroot_shell() {
+  if [[ -n $(unchroot_readlink $SHELL) ]] ;then
+    printf %s $SHELL
+  else
+    printf %s /bin/sh
+  fi
 }
 
 while getopts ':hp:u:c' flag; do
@@ -75,6 +83,6 @@ shift $(( OPTIND - 1 ))
 chrootdir=/proc/$chpid/root
 
 args=("$@")
-[[ -z "$@" ]] && args=/bin/sh
+[[ -z "$@" ]] && args=$(unchroot_shell)
 (( $chcwd )) && export HOME=$(unchroot_readlink /proc/$chpid/cwd)
 unchroot
