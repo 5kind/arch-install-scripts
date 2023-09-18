@@ -24,7 +24,7 @@ usage: ${0##*/} [command] [arguments...]
     -h                  Print this help message
     -p <pid>            Run in /proc/\$pid/root instead of pid 1
     -u <user>[:group]   Specify non-root user and optional group to use
-    -c                  export \$HOME=/proc/\$pid/cwd
+    -c                  Export \$HOME=/proc/\$pid/cwd
 
 If 'command' is unspecified, ${0##*/} will launch \$SHELL($SHELL) or /bin/sh.
 
