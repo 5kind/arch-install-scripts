@@ -22,14 +22,15 @@ chroot_maybe_add_mount() {
 }
 
 try_mkdir() {
-  if [[ ! -d $1 ]]; then
-    warning "$1 don't exist, try mkdir it firstly!"
-    mkdir -p "$1"
+  local folder=$1
+  if [[ ! -e $folder && ! -L $folder ]]; then
+    warning "$folder not exist, try mkdir it firstly!"
+    mkdir -p "$folder"
   fi
 }
 
 chroot_try_add_mount() {
-  # chroot_try_add_mount will mount $dest to $chrootdir$dest when mount failed
+  # chroot_try_add_mount will chroot_bind_device when chroot_add_mount failed.
   local src=$1
   local dest=$2
   shift 2
@@ -37,8 +38,7 @@ chroot_try_add_mount() {
 
   try_mkdir $dest
   chroot_add_mount $src $dest $args 2>/dev/null
-
-  if [[ $? -ne 0 ]]; then
+  if (( $? )); then
     local old_src=$src
     src="${dest#$chrootdir}"
     warning "mount $old_src failed! try mount -o bind $src $dest instead!"
@@ -52,16 +52,16 @@ chroot_setup() {
   [[ $(trap -p EXIT) ]] && die '(BUG): attempting to overwrite existing EXIT trap'
   trap 'chroot_teardown' EXIT
 
-  chroot_add_mount proc "$1/proc" -t proc -o nosuid,noexec,nodev &&
-  chroot_add_mount sys "$1/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
+  chroot_try_add_mount proc "$1/proc" -t proc -o nosuid,noexec,nodev &&
+  chroot_try_add_mount sys "$1/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
   ignore_error chroot_maybe_add_mount "[[ -d '$1/sys/firmware/efi/efivars' ]]" \
       efivarfs "$1/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
   chroot_try_add_mount udev "$1/dev" -t devtmpfs -o mode=0755,nosuid &&
   chroot_try_add_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
   chroot_try_add_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
   chroot_add_mount /run "$1/run" --bind --make-private ||
-  chroot_add_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
-  chroot_add_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
+  chroot_try_add_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
+  chroot_try_add_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
 }
 
 chroot_teardown() {
