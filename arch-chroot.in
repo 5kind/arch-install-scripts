@@ -48,10 +48,9 @@ resolve_link() {
 chroot_add_resolv_conf() {
   local chrootdir=$1
   local src
-  local dest
+  local dest="$chrootdir/etc/resolv.conf"
 
   src=$(resolve_link /etc/resolv.conf)
-  dest=$(resolve_link "$chrootdir/etc/resolv.conf" "$chrootdir")
 
   # If we don't have a source resolv.conf file, there's nothing useful we can do.
   [[ -e $src ]] || return 0
@@ -96,14 +95,6 @@ arch-chroot() {
   [[ $userspec ]] && chroot_args+=(--userspec "$userspec")
 
   SHELL=/bin/bash $pid_unshare chroot "${chroot_args[@]}" -- "$chrootdir" "${args[@]}"
-  if [ $? -ne 0 ]; then
-    warning "unshare may failed! try chroot $chrootdir without unshare!"
-    SHELL=/bin/bash chroot "${chroot_args[@]}" -- "$chrootdir" "${args[@]}"
-    if [ $? -ne 0 ]; then
-      warning "chroot -- $chrootdir may failed! try chroot $chrootdir without --!"
-      SHELL=/bin/bash chroot "${chroot_args[@]}" "$chrootdir" "${args[@]}"
-    fi
-  fi
 }
 
 while getopts ':hNu:r' flag; do

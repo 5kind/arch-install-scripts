@@ -72,11 +72,7 @@ pacstrap() {
 
   msg 'Installing packages to %s' "$newroot"
   if ! $pid_unshare pacman -r "$newroot" "${pacman_args[@]}"; then
-    warning "Failed to $pid_unshare pacman -r "$newroot" "${pacman_args[@]}""
-    warning "Try pacman -r "$newroot" "${pacman_args[@]}" without $pid_unshare!"
-    if ! pacman -r "$newroot" "${pacman_args[@]}";then
-      die 'Failed to install packages to new root'
-    fi
+    die 'Failed to install packages to new root'
   fi
 
   if (( copymirrorlist )); then
