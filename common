@@ -22,10 +22,10 @@ chroot_maybe_add_mount() {
 }
 
 try_mkdir() {
-  local folder=$1
-  if [[ ! -e $folder && ! -L $folder ]]; then
-    warning "$folder not exist, try mkdir it firstly!"
-    mkdir -p "$folder"
+  local file=$1
+  if [[ ! -e $file && ! -L $file ]]; then
+    warning "$file not exist, try mkdir it firstly!"
+    mkdir -p "$file"
   fi
 }
 
@@ -34,7 +34,7 @@ chroot_try_add_mount() {
   local src=$1
   local dest=$2
   shift 2
-  local args="${@}"
+  local args="$@"
 
   try_mkdir $dest
   chroot_add_mount $src $dest $args 2>/dev/null
@@ -60,8 +60,8 @@ chroot_setup() {
   chroot_try_add_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
   chroot_try_add_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
   chroot_add_mount /run "$1/run" --bind --make-private ||
-  chroot_try_add_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
-  chroot_try_add_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
+  chroot_add_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755 &&
+  chroot_add_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
 }
 
 chroot_teardown() {
@@ -112,7 +112,7 @@ unshare_teardown() {
   chroot_teardown
 
   if (( ${#CHROOT_ACTIVE_LAZY[@]} )); then
-    umount --lazy "${CHROOT_ACTIVE_LAZY[@]}"
+    umount -l "${CHROOT_ACTIVE_LAZY[@]}"
   fi
   unset CHROOT_ACTIVE_LAZY
 
@@ -122,10 +122,11 @@ unshare_teardown() {
   unset CHROOT_ACTIVE_FILES
 }
 
+# Android Kernel not provide full unshare supoort, use failback function.
 pid_unshare="unshare --fork --pid"
+$pid_unshare true 2>/dev/null || pid_unshare="unshare --fork"
 mount_unshare="$pid_unshare --mount --map-auto --map-root-user --setuid 0 --setgid 0"
-$pid_unshare true 2>/dev/null|| unset pid_unshare mount_unshare
-# if unshare not support, chroot directly
+$mount_unshare true 2>/dev/null || mount_unshare="$pid_unshare --mount"
 
 # This outputs code for declaring all variables to stdout. For example, if
 # FOO=BAR, then running
