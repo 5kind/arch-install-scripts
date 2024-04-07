@@ -1,4 +1,7 @@
+#!/hint/bash
+# SPDX-License-Identifier: GPL-2.0-only
 # shellcheck disable=SC2059 # $1 and $2 can contain the printf modifiers
+
 out() { printf "$1 $2\n" "${@:3}"; }
 error() { out "==> ERROR:" "$@"; } >&2
 warning() { out "==> WARNING:" "$@"; } >&2
