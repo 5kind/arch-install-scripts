@@ -139,7 +139,7 @@ shift
 
 [[ -d $newroot ]] || die "%s is not a directory" "$newroot"
 
-pacman_args+=("$pacmode" "${@:-base}" --config="$pacman_config")
+pacman_args+=("$pacmode" "${@:-base}" --config="$pacman_config" --disable-sandbox)
 
 if (( ! hostcache )); then
   pacman_args+=(--cachedir="$newroot/var/cache/pacman/pkg")
