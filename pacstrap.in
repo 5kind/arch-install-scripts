@@ -139,6 +139,11 @@ shift
 
 [[ -d $newroot ]] || die "%s is not a directory" "$newroot"
 
+tmpfile="$(mktemp -t pacman.conf.XXXX)"
+cp "$pacman_config" "$tmpfile"
+sed -i 's/^DownloadUser/#&/' "$tmpfile"
+pacman_config="$tmpfile"
+
 pacman_args+=("$pacmode" "${@:-base}" --config="$pacman_config" --disable-sandbox)
 
 if (( ! hostcache )); then
@@ -156,3 +161,7 @@ else
   setup=chroot_setup
   pacstrap
 fi
+
+# TODO: There is a trap check on exit. Need to rework the trap handling with
+# hook-ins/callbacks to remove aux files
+rm "$tmpfile"
