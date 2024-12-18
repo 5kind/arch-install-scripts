@@ -24,6 +24,21 @@ chroot_maybe_add_mount() {
   fi
 }
 
+chroot_try_add_mount() {
+  # 1. mkdir if $dest doesn't exist
+  # 2. bind_device if add_mount fails
+  local src=$1; local dest=$2; shift 2
+  local args="$@"
+
+  [[ ! -e "$dest" ]] && mkdir -p "$dest"
+  chroot_add_mount "$src" "$dest" "$args" 2>/dev/null
+
+  if (( $? )); then
+    src="${dest#$chrootdir}"
+    chroot_bind_device "$src" "$dest"
+  fi
+}
+
 chroot_setup() {
   CHROOT_ACTIVE_MOUNTS=()
   [[ $(trap -p EXIT) ]] && die '(BUG): attempting to overwrite existing EXIT trap'
@@ -33,10 +48,11 @@ chroot_setup() {
   chroot_add_mount sys "$1/sys" -t sysfs -o nosuid,noexec,nodev,ro &&
   ignore_error chroot_maybe_add_mount "[[ -d '$1/sys/firmware/efi/efivars' ]]" \
       efivarfs "$1/sys/firmware/efi/efivars" -t efivarfs -o nosuid,noexec,nodev &&
-  chroot_add_mount udev "$1/dev" -t devtmpfs -o mode=0755,nosuid &&
-  chroot_add_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
-  chroot_add_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
-  chroot_add_mount /run "$1/run" --bind --make-private &&
+  chroot_try_add_mount udev "$1/dev" -t devtmpfs -o mode=0755,nosuid &&
+  chroot_try_add_mount devpts "$1/dev/pts" -t devpts -o mode=0620,gid=5,nosuid,noexec &&
+  chroot_try_add_mount shm "$1/dev/shm" -t tmpfs -o mode=1777,nosuid,nodev &&
+  chroot_add_mount /run "$1/run" --bind --make-private ||
+  chroot_add_mount run "$1/run" -t tmpfs -o nosuid,nodev,mode=0755
   chroot_add_mount tmp "$1/tmp" -t tmpfs -o mode=1777,strictatime,nodev,nosuid
 }
 
@@ -99,7 +115,9 @@ unshare_teardown() {
 }
 
 pid_unshare="unshare --fork --pid"
+$pid_unshare true 2>/dev/null || pid_unshare="unshare --fork"
 mount_unshare="$pid_unshare --mount --map-auto --map-root-user --setuid 0 --setgid 0"
+$mount_unshare true 2>/dev/null || mount_unshare="$pid_unshare --mount"
 
 # This outputs code for declaring all variables to stdout. For example, if
 # FOO=BAR, then running
