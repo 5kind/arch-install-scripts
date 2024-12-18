@@ -239,7 +239,7 @@ chroot_add_host_files() {
   chroot_add_safely_files
 }
 
-chroot_add_fstab() {
+chroot_mount_fstab() {
   [[ -z "$fstab_mounts" ]] && return 0
 
   while read src dest fstype opts dump pass; do
@@ -263,7 +263,7 @@ chroot_bind_type() {
   chroot_early_mount_line
 }
 
-chroot_add_binds() {
+chroot_mount_binds() {
   [[ -z ${bind_mounts[@]} ]] && return 0
 
   for bind_info in ${bind_mounts[@]}; do
@@ -271,7 +271,7 @@ chroot_add_binds() {
   done
 }
 
-chroot_add_volumes() {
+chroot_mount_volumes() {
   [[ -z ${rbind_mounts[@]} ]] && return 0
 
   for bind_info in ${rbind_mounts[@]}; do
@@ -281,14 +281,15 @@ chroot_add_volumes() {
 
 chroot_local_fs_pre() {
   # Import fstab from fstab files
+  (( mount_fstab == 0 )) || fstab_files+=( "$chrootdir/etc/fstab")
   chroot_import_fstab ${fstab_files[@]}
   chroot_remount_fs
   chroot_add_android
   chroot_add_host_files
   chroot_add_safely_files
-  chroot_add_binds
-  chroot_add_volumes
-  chroot_add_fstab
+  chroot_mount_binds
+  chroot_mount_volumes
+  chroot_mount_fstab
 }
 
 chroot_add_later() {

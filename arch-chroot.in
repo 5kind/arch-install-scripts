@@ -13,6 +13,7 @@ mount_host=0
 mount_safely=0
 bind_mounts=()
 rbind_mounts=()
+mount_fstab=0
 fstab_files=()
 fstab_mounts=""
 later_mounts=()
@@ -32,7 +33,8 @@ usage: ${0##*/} chroot-dir [command] [arguments...]
     -A                  A couple of recommended -b (Mount Android like proot-distro)
     -R                  A couple of recommended -b (Mount host files like proot -R)
     -S                  A couple of recommended -b (Mount host files like proot -S)
-    -f <src>            Make the content of <src> accessible like /etc/fstab.
+    -F                  Make the content of \$chrootdir/etc/fstab accessible
+    -f <src>            Same as -F, but with a specific fstab file
     -l                  Output log with date, hostname, pid to stdout
     -n <num>            Specify unshare level: 0~7,it can be seen as a binary number:
         0 (000)         No unshare. (chroot_setup)
@@ -136,6 +138,9 @@ while getopts ':hNu:rb:v:ARSFf:n:l' flag; do
       ;;
     S)
       mount_safely=1
+      ;;
+    F)
+      mount_fstab=1
       ;;
     f)
       fstab_files+=("$OPTARG")
