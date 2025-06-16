@@ -391,8 +391,14 @@ unshare_teardown() {
   chroot_teardown
 
   if (( ${#CHROOT_ACTIVE_FILES[@]} )); then
-    [[ -f "${CHROOT_ACTIVE_FILES[@]}" ]] && rm "${CHROOT_ACTIVE_FILES[@]}"
-    [[ -d "${CHROOT_ACTIVE_FILES[@]}" ]] && rmdir "${CHROOT_ACTIVE_FILES[@]}"
+      for file in "${CHROOT_ACTIVE_FILES[@]}"; do
+          if [[ -d "$file" ]]; then
+              # Try to remove the directory, it will fail if it is not empty.
+              rmdir -- "$file" 2>/dev/null
+          elif [[ -f "$file" || -L "$file" ]]; then
+              rm -- "$file" 2>/dev/null
+          fi
+      done
   fi
   unset CHROOT_ACTIVE_FILES
 }
