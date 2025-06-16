@@ -4,8 +4,17 @@
 local -a args=(
     '(-h --help)'{-h,--help}'[display help]'
     '-N[Run in unshare mode as a regular user]'
+    '-n[Specify unshare level (0-7)]:level'
     '-u[The non-root user and optional group to use]: :->userspecs'
     '-r[Do not change the resolv.conf within the chroot]'
+    '-b[Bind mount <src>[:<dest>[:<opts>]]:mount source:_files'
+    '-v[R-bind mount <src>[:<dest>[:<opts>]]:mount source:_files'
+    '-A[Mount recommended Android directories]'
+    '-R[Mount recommended host files (like proot -R)]'
+    '-S[Mount recommended safe files (like proot -S)]'
+    '-F[Mount fstab from within the chroot]'
+    '-f[Mount from a specific fstab file]:fstab file:_files'
+    '-l[Enable logging to stdout]'
     '1:new root directory:_directories'
     '*:::command:_normal'
 )

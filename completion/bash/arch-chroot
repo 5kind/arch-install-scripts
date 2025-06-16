@@ -1,8 +1,8 @@
-_arch_chroot() {
+_termux_arch_chroot() {
     compopt +o dirnames
     local cur prev opts i
     _init_completion -n : || return
-    opts="-N -u -r -h"
+    opts="-h -A -R -S -F -l -u -r -b -v -f -N -n"
 
     for i in "${COMP_WORDS[@]:1:COMP_CWORD-1}"; do
         if [[ -d ${i} ]]; then
@@ -10,10 +10,19 @@ _arch_chroot() {
         fi
     done
 
-    if [[ ${prev} = -u ]]; then
-        _usergroup -u
-        return 0
-    fi
+    case ${prev} in
+        -u)
+            _usergroup -u
+            return 0
+            ;;
+        -b|-v|-f)
+            _filedir
+            return 0
+            ;;
+        -n)
+            return 0
+            ;;
+    esac
 
     if [[ ${cur} = -* ]]; then
         COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
@@ -22,4 +31,4 @@ _arch_chroot() {
     compopt -o dirnames
 }
 
-complete -F _arch_chroot arch-chroot
+complete -F _termux_arch_chroot termux-arch-chroot

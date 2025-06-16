@@ -1,31 +1,29 @@
-arch-chroot(8)
-==============
+termux-arch-chroot(8)
+=====================
 
 Name
 ----
-arch-chroot - enhanced chroot command
+termux-arch-chroot - an advanced chroot/unshare utility for Termux and other Linux systems
 
 Synopsis
 --------
-arch-chroot [options] chroot-dir [command] [arguments...]
+termux-arch-chroot [options] chroot-dir [command] [arguments...]
 
 Description
 -----------
-arch-chroot wraps the linkman:chroot[1] command while ensuring that important
-functionality is available, e.g. mounting '/dev/', '/proc' and other API
-filesystems, or exposing linkman:resolv.conf[5] to the chroot.
+termux-arch-chroot wraps the linkman:chroot[1] command while ensuring that important
+functionality is available. It automatically sets up API filesystems like '/dev', '/proc', '/sys',
+exposes linkman:resolv.conf[5] to the chroot, and provides powerful, flexible mounting capabilities.
+It is designed to create a robust, container-like environment with minimal setup.
 
-If 'command' is unspecified, arch-chroot will launch */bin/bash*.
+If 'command' is unspecified, termux-arch-chroot will launch */bin/bash*.
 
 [NOTE]
 ======
-The target chroot-dir *should* be a mountpoint. This ensures that tools such as
-linkman:pacman[8] or linkman:findmnt[8] have an accurate hierarchy of the
-mounted filesystems within the chroot. If your chroot target is not a
-mountpoint, you can bind mount the directory on itself to make it a mountpoint,
-i.e.:
-
-'mount --bind /your/chroot /your/chroot'
+This script automatically handles the chroot directory. If 'chroot-dir' is not
+already a mountpoint, the script will automatically bind mount it on itself to
+ensure tools like linkman:pacman[8] or linkman:findmnt[8] function correctly.
+Manual mounting is no longer necessary.
 ======
 
 
@@ -37,6 +35,13 @@ Options
 	mount and user namespace, allowing regular users to create new system
 	installations.
 
+*-n <level>*::
+	Run in unshare mode with a specific isolation level, provided as a bitmask:
+	*1* - Enable PID namespace unshare (`unshare --pid`).
+	*2* - Enable mount namespace unshare (`unshare --mount`).
+	*4* - Enable the full `unshare_setup` (instead of `chroot_setup`).
+	Levels can be combined, e.g., `-n 3` enables PID and mount unsharing.
+
 *-u <user>[:group]*::
 	Specify non-root user and optional group to use.
 
@@ -44,10 +49,35 @@ Options
 	Do not change the resolv.conf within the chroot. This means that the resolver
 	might not work in the chroot, which could be the required state.
 
+*-b _src_[:_dest_[:_opts_]]*::
+	Make the content of _src_ on the host available at _dest_ inside the chroot.
+	If _dest_ is omitted, it defaults to the same path as _src_. This uses a bind mount.
+
+*-v _src_[:_dest_[:_opts_]]*::
+	Same as *-b*, but performs a recursive bind mount (`mount --rbind`), similar
+	to Docker's volume mounting.
+
+*-A*::
+	A convenience flag to mount a set of recommended directories for a Termux/Android environment.
+
+*-R*::
+	A convenience flag to mount a set of common host files, similar in spirit to `proot -R`.
+
+*-S*::
+	A convenience flag to mount a set of commonly used and safe host files, similar to `proot -S`.
+
+*-F*::
+	Automatically parse and mount entries from `/etc/fstab` inside the chroot directory.
+
+*-f <fstab-file>*::
+	Same as *-F*, but uses a specific _fstab-file_ from the host. Can be specified multiple times.
+
+*-l*::
+	Enable verbose logging. Prints setup and mount commands to standard output.
+
 *-h*::
 	Output syntax and command line options.
 
 See Also
 --------
-
-linkman:pacman[8]
+linkman:chroot[1], linkman:unshare[1], linkman:pacman[8]
